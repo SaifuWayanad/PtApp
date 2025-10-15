@@ -1,0 +1,590 @@
+{% extends 'trainer/base.html' %}
+
+{% block title %}Add Health Metrics - Gym Personal Trainer App{% endblock %}
+
+{% block content %}
+<style>
+    .time-input-section .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .sleep-wake-icon {
+        font-size: 1.2em;
+        margin-right: 8px;
+    }
+    
+    .section-card {
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .section-card:hover {
+        transform: translateY(-2px);
+    }
+
+
+
+        .form-section {
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    /* Time dropdown styling */
+    .time-dropdown {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #667eea;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        text-align: center;
+    }
+
+    .time-dropdown:focus {
+        outline: none;
+        border-color: #764ba2;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        transform: translateY(-1px);
+    }
+
+    .time-dropdown:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    /* Time separator styling */
+    .time-container .fw-bold {
+        color: #667eea;
+        font-size: 1.2rem;
+        margin: 0 5px;
+    }
+
+    /* Flex container for time inputs */
+    .d-flex.gap-2 {
+        align-items: center;
+    }
+
+    .d-flex.gap-2 .flex-fill {
+        min-width: 0;
+    }
+
+
+
+    .quick-time-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    .hidden-input {
+        display: none;
+    }
+
+    .minute-marker {
+        border-radius: 1px;
+        transition: all 0.2s ease;
+    }
+
+    .time-section-title {
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 15px;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .clock-wrapper {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    /* Calendar styling */
+    .date-calendar {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 2px solid #667eea;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #667eea;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        text-align: center;
+        position: relative;
+    }
+
+    .date-calendar:focus {
+        outline: none;
+        border-color: #764ba2;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .date-calendar:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25);
+        border-color: #764ba2;
+    }
+
+    .calendar-container {
+        position: relative;
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .calendar-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
+    }
+
+    .calendar-icon {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #667eea;
+        pointer-events: none;
+        font-size: 1.2em;
+    }
+
+    .date-label {
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .calendar-container.focused {
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+        border-color: #764ba2;
+    }
+
+    .date-notification {
+        background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+        border-left: 3px solid #667eea;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-10">
+        <div class="text-center mb-4">
+            <h1 class="gym-header">📊 Add Health Metrics</h1>
+            <p class="text-white">Track your daily health and fitness progress</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Record Your Health Data</h5>
+                
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> If you already have data for the selected date, it will be updated with your new values.
+                </div>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Sleep & Wake Schedule Section -->
+                    <div class="card mb-4 section-card" style="background-color: #f8f9fa;">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Sleep & Wake Schedule</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-8 mb-4 mx-auto">
+                                    <div class="calendar-container">
+                                        <div class="date-label">
+                                            <span class="me-2">📅</span>
+                                            <label for="{{ form.date.id_for_label }}" class="form-label mb-0">
+                                                {{ form.date.label }}
+                                            </label>
+                                        </div>
+                                        <div class="position-relative">
+                                            {{ form.date }}
+                                            <i class="calendar-icon">🗓️</i>
+                                        </div>
+                                        {% if form.date.help_text %}
+                                            <div class="form-text mt-2">{{ form.date.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.date.errors %}
+                                            <div class="text-danger small mt-2">
+                                                {% for error in form.date.errors %}
+                                                    <div>{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="me-2">🌙</span>
+                                        <label class="form-label mb-0">Sleep Time</label>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <div class="flex-fill">
+                                            {{ form.sleep_hour }}
+                                        </div>
+                                        <span class="fw-bold">:</span>
+                                        <div class="flex-fill">
+                                            {{ form.sleep_minute }}
+                                        </div>
+                                        <div class="flex-fill">
+                                            {{ form.sleep_ampm }}
+                                        </div>
+                                    </div>
+                                    {% if form.sleep_hour.errors or form.sleep_minute.errors or form.sleep_ampm.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.sleep_hour.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                            {% for error in form.sleep_minute.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                            {% for error in form.sleep_ampm.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="me-2">🌅</span>
+                                        <label class="form-label mb-0">Wake Up Time</label>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <div class="flex-fill">
+                                            {{ form.wakeup_hour }}
+                                        </div>
+                                        <span class="fw-bold">:</span>
+                                        <div class="flex-fill">
+                                            {{ form.wakeup_minute }}
+                                        </div>
+                                        <div class="flex-fill">
+                                            {{ form.wakeup_ampm }}
+                                        </div>
+                                    </div>
+                                    {% if form.wakeup_hour.errors or form.wakeup_minute.errors or form.wakeup_ampm.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.wakeup_hour.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                            {% for error in form.wakeup_minute.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                            {% for error in form.wakeup_ampm.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Body Measurements Section -->
+                    <div class="card mb-4 section-card" style="background-color: #f0f8ff;">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">📏 Body Measurements</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="me-2">⚖️</span>
+                                        <label for="{{ form.weight.id_for_label }}" class="form-label mb-0">
+                                            {{ form.weight.label }}
+                                        </label>
+                                    </div>
+                                    {{ form.weight }}
+                                    {% if form.weight.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.weight.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="me-2">🦵</span>
+                                        <label for="{{ form.thigh_length.id_for_label }}" class="form-label mb-0">
+                                            {{ form.thigh_length.label }}
+                                        </label>
+                                    </div>
+                                    {{ form.thigh_length }}
+                                    {% if form.thigh_length.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.thigh_length.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="me-2">📐</span>
+                                        <label for="{{ form.hip_length.id_for_label }}" class="form-label mb-0">
+                                            {{ form.hip_length.label }}
+                                        </label>
+                                    </div>
+                                    {{ form.hip_length }}
+                                    {% if form.hip_length.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.hip_length.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-light small mb-0" style="font-size: 0.875rem;">
+                                <i class="fas fa-ruler me-1"></i>
+                                Consistent measurement locations help track progress accurately.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Photo Section -->
+                    <div class="card mb-4 section-card" style="background-color: #f0fff0;">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">📸 Current Weight Photo</h6>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="me-2">🖼️</span>
+                                    <label for="{{ form.image.id_for_label }}" class="form-label mb-0">
+                                        {{ form.image.label }}
+                                    </label>
+                                </div>
+                                {{ form.image }}
+                                {% if form.image.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.image.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text mt-2">
+                                    <i class="fas fa-camera me-1"></i>
+                                    Upload a progress photo to visually track your transformation journey.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'trainer:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Health Metrics</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enhanced calendar functionality
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Health metrics form loaded');
+    
+    // Enhanced date input styling and functionality
+    const dateInput = document.querySelector('.date-calendar');
+    if (dateInput) {
+        // Add calendar icon functionality
+        dateInput.addEventListener('click', function() {
+            this.showPicker();
+        });
+        
+        // Add animation on focus
+        dateInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+        
+        dateInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+        
+        // Format display when date is selected
+        dateInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            if (!isNaN(selectedDate)) {
+                const options = { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                };
+                const formattedDate = selectedDate.toLocaleDateString('en-US', options);
+                
+                // Add a subtle notification
+                const container = this.closest('.calendar-container');
+                let notification = container.querySelector('.date-notification');
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.className = 'date-notification form-text mt-2';
+                    notification.style.color = '#667eea';
+                    notification.style.fontWeight = '500';
+                    container.appendChild(notification);
+                }
+                notification.innerHTML = `📅 Selected: ${formattedDate}`;
+                
+                // Animate the container
+                container.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    container.style.transform = 'scale(1)';
+                }, 200);
+            }
+        });
+        
+        // Trigger change event if there's already a value
+        if (dateInput.value) {
+            dateInput.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Image compression functionality
+    const imageInput = document.querySelector('input[type="file"][accept*="image"]');
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Show compression indicator
+            const compressionIndicator = document.createElement('div');
+            compressionIndicator.className = 'alert alert-info mt-2';
+            compressionIndicator.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>Compressing image... Please wait.</span>
+                </div>
+            `;
+            
+            // Insert after the file input
+            const container = this.closest('.mb-3');
+            container.appendChild(compressionIndicator);
+
+            // Compress the image
+            compressImage(file, 0.8, 800, 800).then(compressedFile => {
+                // Create new FileList with compressed image
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(compressedFile);
+                imageInput.files = dataTransfer.files;
+
+                // Show success message
+                compressionIndicator.className = 'alert alert-success mt-2';
+                compressionIndicator.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>
+                    Image compressed successfully! 
+                    <small class="text-muted">
+                        (Original: ${formatFileSize(file.size)} → Compressed: ${formatFileSize(compressedFile.size)})
+                    </small>
+                `;
+
+                // Remove indicator after 3 seconds
+                setTimeout(() => {
+                    compressionIndicator.remove();
+                }, 3000);
+
+            }).catch(error => {
+                console.error('Image compression failed:', error);
+                compressionIndicator.className = 'alert alert-warning mt-2';
+                compressionIndicator.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Image compression failed. Using original image.
+                `;
+                
+                setTimeout(() => {
+                    compressionIndicator.remove();
+                }, 3000);
+            });
+        });
+    }
+});
+
+// Image compression function
+function compressImage(file, quality = 0.8, maxWidth = 800, maxHeight = 800) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = function() {
+            // Calculate new dimensions
+            let { width, height } = img;
+            
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = Math.floor(width * ratio);
+                height = Math.floor(height * ratio);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw and compress
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob(resolve, 'image/jpeg', quality);
+        };
+
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+// File size formatting function
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
+
+{% endblock %}

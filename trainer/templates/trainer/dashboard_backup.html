@@ -1,0 +1,262 @@
+{% extends 'tr<!-- Weight Progress Graph (Smaller) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">📊 Weight Progress</h5>
+                {% if health_metrics %}
+                    <canvas id="weightChart" height="150"></canvas>
+                {% else %}
+                    <div class="text-center p-4">
+                        <p class="text-muted">No weight data available yet.</p>
+                        <p>Start tracking your progress by adding your first health metrics entry!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sleep Time and Body Measurements Graphs -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">💤 Average Sleep Time</h5>
+                {% if health_metrics %}
+                    <canvas id="sleepChart" height="200"></canvas>
+                {% else %}
+                    <div class="text-center p-4">
+                        <p class="text-muted">No sleep data available yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">📏 Hip & Thigh Measurements</h5>
+                {% if health_metrics %}
+                    <canvas id="measurementChart" height="200"></canvas>
+                {% else %}
+                    <div class="text-center p-4">
+                        <p class="text-muted">No measurement data available yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>}
+
+{% block title %}Dashboard - Gym Personal Trainer App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center mb-4">
+            <h1 class="gym-header">🏋️‍♂️ Welcome to Your  Dashboard</h1>
+            <p class="text-white">Track your fitness journey and connect with personal trainers</p>
+        </div>
+    </div>
+</div>
+
+<!-- Weight Progress Graph -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">� Weight Progress</h5>
+                {% if health_metrics %}
+                    <canvas id="weightChart" width="400" height="200"></canvas>
+                {% else %}
+                    <div class="text-center p-4">
+                        <p class="text-muted">No weight data available yet.</p>
+                        <p>Start tracking your progress by adding your first health metrics entry!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Health Data Card -->
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">➕ Add Health Data</h5>
+                <p class="card-text">Record your daily health metrics and track your progress</p>
+                <a href="{% url 'trainer:add_health_metrics' %}" class="btn btn-primary btn-lg">Add New Entry</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Script -->
+{% if health_metrics %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    const weightChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for metric in health_metrics reversed %}
+                    '{{ metric.recorded_date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Weight (kg)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.weight }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Your Weight Progress Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Weight (kg)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+
+    // Sleep Time Chart
+    const sleepCtx = document.getElementById('sleepChart').getContext('2d');
+    const sleepChart = new Chart(sleepCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for metric in health_metrics reversed %}
+                    '{{ metric.recorded_date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Sleep Duration (hours)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.sleeped_time_hours|floatformat:1 }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Sleep Duration Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Hours'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+
+    // Body Measurements Chart
+    const measurementCtx = document.getElementById('measurementChart').getContext('2d');
+    const measurementChart = new Chart(measurementCtx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for metric in health_metrics reversed %}
+                    '{{ metric.recorded_date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Hip Length (cm)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.hip_length }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1,
+                fill: false
+            }, {
+                label: 'Thigh Length (cm)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.thigh_length }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgba(255, 206, 86, 1)',
+                backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Body Measurements Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Length (cm)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+
+
+{% endblock %}
