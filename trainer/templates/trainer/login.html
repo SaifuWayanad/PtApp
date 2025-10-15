@@ -1,0 +1,57 @@
+{% extends 'trainer/base.html' %}
+
+{% block title %}Login - Gym Personal Trainer App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="text-center mb-4">
+            <h1 class="gym-header">🏋️‍♂️ Gym Login</h1>
+            <p class="text-white">Access your personal trainer dashboard</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-body p-4">
+                <h4 class="card-title text-center mb-4">Sign In</h4>
+                
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="id_username" name="username" 
+                               placeholder="Enter your username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="id_password" name="password" 
+                               placeholder="Enter your password" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Demo accounts:<br>
+                        Admin: admin / admin123<br>
+                        User: user1 / 123
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

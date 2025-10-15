@@ -1,0 +1,776 @@
+{% extends 'trainer/base.html' %}
+
+{% block title %}Dashboard - Gym Personal Trainer App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center mb-4">
+            <h1 class="gym-header">🏋️‍♂️ Welcome to Your Fitness Dashboard</h1>
+            <p class="text-white">Track your fitness journey and connect with personal trainers</p>
+        </div>
+    </div>
+</div>
+
+<!-- Admin User Selection Dropdown -->
+{% if is_admin %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-warning">
+            <div class="card-body">
+                <div class="admin-controls-container">
+                    <div class="admin-info-section">
+                        <span class="badge bg-warning text-dark me-3">👑 ADMIN</span>
+                        <h6 class="mb-0 admin-viewing-text">
+                            {% if selected_user and selected_user != user %}
+                                Viewing data for: <strong>{{ selected_user.username }}</strong>
+                                {% if selected_user.first_name or selected_user.last_name %}
+                                    <span class="d-none d-sm-inline">({{ selected_user.first_name }} {{ selected_user.last_name }})</span>
+                                {% endif %}
+                            {% else %}
+                                Viewing your own data
+                            {% endif %}
+                        </h6>
+                    </div>
+                    <div class="admin-actions-section">
+                        <form method="GET" class="user-select-form">
+                            <label for="user-select" class="form-label mb-0 fw-bold d-none d-md-inline">User:</label>
+                            <select name="user_id" id="user-select" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">-- Your Data --</option>
+                                {% for usr in all_users %}
+                                    <option value="{{ usr.id }}" 
+                                        {% if selected_user and selected_user.id == usr.id %}selected{% endif %}>
+                                        {{ usr.username }}
+                                        {% if usr.first_name or usr.last_name %}
+                                            <span class="d-none d-sm-inline">({{ usr.first_name }} {{ usr.last_name }})</span>
+                                        {% endif %}
+                                        {% if usr == user %} - You {% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                        {% if selected_user and selected_user != user %}
+                            <a href="{% url 'trainer:dashboard' %}" class="btn btn-sm btn-outline-primary back-btn">
+                                <i class="fas fa-user d-none d-sm-inline"></i> 
+                                <span class="d-none d-sm-inline">Back to My Data</span>
+                                <span class="d-sm-none">Back</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Weight Progress Graph -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mobile-chart-title">📊 Weight Progress</h5>
+                {% if health_metrics %}
+                    <div class="chart-container">
+                        <canvas id="weightChart" class="mobile-chart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4 no-data-section">
+                        <div class="no-data-icon">📊</div>
+                        <p class="text-muted">No weight data available yet.</p>
+                        <p class="text-muted mb-3">Start tracking your progress by adding your first health metrics entry!</p>
+                        <a href="{% url 'trainer:add_health_metrics' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Add Health Metrics
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sleep Time and Body Measurements Graphs -->
+<div class="row mb-4">
+    <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mobile-chart-title">💤 Sleep Duration</h5>
+                {% if health_metrics %}
+                    <div class="chart-container">
+                        <canvas id="sleepChart" class="mobile-chart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4 no-data-section">
+                        <div class="no-data-icon">💤</div>
+                        <p class="text-muted">No sleep data available yet.</p>
+                        <small class="text-muted">Add your sleep schedule to see trends</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-md-12">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mobile-chart-title">📏 Hip & Thigh Measurements</h5>
+                {% if health_metrics %}
+                    <div class="chart-container">
+                        <canvas id="measurementChart" class="mobile-chart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4 no-data-section">
+                        <div class="no-data-icon">📏</div>
+                        <p class="text-muted">No measurement data available yet.</p>
+                        <small class="text-muted">Track your body measurements over time</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Chart.js Script -->
+{% if health_metrics %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Weight Chart
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    const weightChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for metric in health_metrics reversed %}
+                    '{{ metric.recorded_date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Weight (kg)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.weight }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Your Weight Progress Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Weight (kg)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+
+    // Sleep Time Chart
+    const sleepCtx = document.getElementById('sleepChart').getContext('2d');
+    const sleepChart = new Chart(sleepCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for metric in health_metrics reversed %}
+                    '{{ metric.recorded_date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Sleep Duration (hours)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.sleeped_time_hours|floatformat:1 }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Sleep Duration Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Hours'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+
+    // Body Measurements Chart
+    const measurementCtx = document.getElementById('measurementChart').getContext('2d');
+    const measurementChart = new Chart(measurementCtx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for metric in health_metrics reversed %}
+                    '{{ metric.recorded_date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Hip Length (cm)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.hip_length }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1,
+                fill: false
+            }, {
+                label: 'Thigh Length (cm)',
+                data: [
+                    {% for metric in health_metrics reversed %}
+                        {{ metric.thigh_length }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: 'rgba(255, 206, 86, 1)',
+                backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Body Measurements Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Length (cm)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+
+<!-- Progress Photos Gallery -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">📸 Recent Weight Photos</h5>
+                {% if recent_images %}
+                    <div class="row g-3">
+                        {% for metric in recent_images %}
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <div class="progress-photo-card">
+                                    <div class="image-container" data-bs-toggle="modal" data-bs-target="#imageModal{{ forloop.counter }}">
+                                        <img src="{{ metric.image.url }}" alt="Progress photo from {{ metric.recorded_date }}" class="img-fluid progress-photo">
+                                        <div class="image-overlay">
+                                            <div class="overlay-content">
+                                                <i class="fas fa-search-plus"></i>
+                                                <div class="image-date">{{ metric.recorded_date|date:"M d, Y" }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="photo-info mt-2">
+                                        <small class="text-muted d-block">{{ metric.recorded_date|date:"M d, Y" }}</small>
+                                        <small class="text-primary">{{ metric.weight }}kg</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal for full-size image -->
+                            <div class="modal fade" id="imageModal{{ forloop.counter }}" tabindex="-1" aria-labelledby="imageModalLabel{{ forloop.counter }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="imageModalLabel{{ forloop.counter }}">
+                                                Progress Photo - {{ metric.recorded_date|date:"F d, Y" }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <img src="{{ metric.image.url }}" alt="Progress photo from {{ metric.recorded_date }}" class="img-fluid rounded">
+                                            <div class="mt-3">
+                                                <div class="row text-center">
+                                                    <div class="col-md-4">
+                                                        <h6 class="text-muted">Weight</h6>
+                                                        <p class="h5 text-primary">{{ metric.weight }} kg</p>
+                                                    </div>
+                                                    {% if metric.thigh_length %}
+                                                    <div class="col-md-4">
+                                                        <h6 class="text-muted">Thigh</h6>
+                                                        <p class="h5 text-success">{{ metric.thigh_length }} cm</p>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if metric.hip_length %}
+                                                    <div class="col-md-4">
+                                                        <h6 class="text-muted">Hip</h6>
+                                                        <p class="h5 text-warning">{{ metric.hip_length }} cm</p>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                {% if metric.sleeped_time_formatted %}
+                                                <div class="mt-2">
+                                                    <h6 class="text-muted">Sleep Duration</h6>
+                                                    <p class="text-info">{{ metric.sleeped_time_formatted }}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <div class="mb-3">
+                            <i class="fas fa-camera" style="font-size: 3rem; color: #dee2e6;"></i>
+                        </div>
+                        <p class="text-muted">No progress photos available yet.</p>
+                        <p>Start documenting your fitness journey by adding photos with your health metrics!</p>
+                        <a href="{% url 'trainer:add_health_metrics' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Add Your First Photo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.progress-photo-card {
+    transition: transform 0.3s ease;
+}
+
+.progress-photo-card:hover {
+    transform: translateY(-5px);
+}
+
+.image-container {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.image-container:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.progress-photo {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-container:hover .progress-photo {
+    transform: scale(1.05);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-container:hover .image-overlay {
+    opacity: 1;
+}
+
+.overlay-content {
+    text-align: center;
+    color: white;
+}
+
+.overlay-content i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.image-date {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.photo-info {
+    text-align: center;
+}
+
+.modal-body img {
+    max-height: 60vh;
+    object-fit: contain;
+}
+
+/* Mobile Responsive Styles */
+
+/* Admin Controls Mobile Responsive */
+.admin-controls-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.admin-info-section {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.admin-actions-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.user-select-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Chart Responsive Styles */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.mobile-chart {
+    max-height: 300px !important;
+    height: 300px !important;
+    width: 100% !important;
+}
+
+.mobile-chart-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* No Data Sections */
+.no-data-section {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.no-data-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Header Responsive */
+.gym-header {
+    font-size: 2rem;
+}
+
+/* Card Responsive */
+.card {
+    margin-bottom: 1rem;
+}
+
+.card-title {
+    font-size: 1rem;
+}
+
+/* Mobile Breakpoints */
+@media (max-width: 992px) {
+    .admin-controls-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .admin-info-section {
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .admin-actions-section {
+        justify-content: center;
+    }
+    
+    .user-select-form {
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .mobile-chart {
+        max-height: 250px !important;
+        height: 250px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .progress-photo {
+        height: 120px;
+    }
+    
+    .gym-header {
+        font-size: 1.75rem;
+        line-height: 1.2;
+        margin-bottom: 0.5rem;
+    }
+    
+    .admin-viewing-text {
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    .back-btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .chart-container {
+        height: 220px;
+    }
+    
+    .mobile-chart {
+        max-height: 220px !important;
+        height: 220px !important;
+    }
+    
+    .mobile-chart-title {
+        font-size: 1rem;
+        text-align: center;
+        justify-content: center;
+    }
+    
+    .no-data-section {
+        min-height: 150px;
+        padding: 1rem;
+    }
+    
+    .no-data-icon {
+        font-size: 2.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Progress Photos Mobile */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .photo-info {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .gym-header {
+        font-size: 1.5rem;
+        padding: 0 0.5rem;
+        text-align: center;
+    }
+    
+    .card {
+        margin-bottom: 0.75rem;
+        border-radius: 0.5rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .admin-controls-container {
+        gap: 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+    }
+    
+    .form-select-sm {
+        font-size: 0.8rem;
+        min-width: auto !important;
+        width: 100%;
+    }
+    
+    .chart-container {
+        height: 200px;
+    }
+    
+    .mobile-chart {
+        max-height: 200px !important;
+        height: 200px !important;
+    }
+    
+    .mobile-chart-title {
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .no-data-section {
+        min-height: 120px;
+        padding: 0.75rem;
+    }
+    
+    .no-data-icon {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Photo Gallery Mobile */
+    .progress-photo {
+        height: 100px;
+    }
+    
+    .overlay-content i {
+        font-size: 1.2rem;
+    }
+    
+    .image-date {
+        font-size: 0.7rem;
+    }
+    
+    .photo-info {
+        font-size: 0.75rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Modal adjustments */
+    .modal-dialog {
+        margin: 0.25rem;
+    }
+    
+    .modal-header {
+        padding: 0.75rem;
+    }
+    
+    .modal-title {
+        font-size: 1rem;
+    }
+    
+    .modal-body {
+        padding: 0.75rem;
+    }
+    
+    .modal-body .row {
+        margin: 0;
+    }
+    
+    .modal-body .col-md-4 {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+    .image-overlay {
+        opacity: 0.8;
+    }
+    
+    .progress-photo-card:hover {
+        transform: none;
+    }
+    
+    .image-container:hover .progress-photo {
+        transform: none;
+    }
+    
+    .btn, .form-select {
+        min-height: 44px; /* Better touch targets */
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+    .progress-photo {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+</style>
+
+{% endblock %}
